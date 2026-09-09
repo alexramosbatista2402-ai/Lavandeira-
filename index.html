@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conferência Diária — Lavanderia</title>
+
+<!-- App instalável (PWA): ícone, manifesto e cor do tema -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1d4f91">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Conferência">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root{
+    --blue-900:#0f2f5c;
+    --blue-700:#1d4f91;
+    --blue-600:#2563a8;
+    --blue-050:#eef4fb;
+    --ink:#1c2a3a;
+    --ink-soft:#5b6b7d;
+    --line:#e1e7ee;
+    --bg:#f4f6f9;
+    --card:#ffffff;
+    --ok-bg:#e8f6ee;
+    --ok-fg:#1f8a4c;
+    --warn-bg:#fdecec;
+    --warn-fg:#c0392b;
+    --pend-bg:#f1f2f5;
+    --pend-fg:#6b7688;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
+
+  /* Header */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 22px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{
+    position:relative;width:46px;height:46px;border-radius:10px;background:var(--blue-700);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;
+    background-size:cover;background-position:center;overflow:hidden;flex-shrink:0;
+  }
+  .brand .mark input[type=file]{
+    position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+  }
+  .brand .mark .edit-hint{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(15,47,92,.55);color:#fff;font-size:10px;font-weight:600;
+    opacity:0;transition:opacity .15s ease;text-align:center;line-height:1.1;pointer-events:none;
+  }
+  .brand .mark:hover .edit-hint{opacity:1;}
+  .brand .name{font-weight:700;font-size:18px;color:var(--blue-900);line-height:1.1;}
+  .brand .tag{font-size:11px;letter-spacing:.04em;color:var(--ink-soft);}
+  .title{text-align:center;flex:1;min-width:240px;}
+  .title h1{margin:0;font-size:21px;color:var(--blue-900);}
+  .title p{margin:2px 0 0;font-size:13px;color:var(--ink-soft);}
+  .datebox{
+    display:flex;flex-direction:column;gap:4px;align-items:flex-end;
+  }
+  .datebox input[type=date]{
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+    font-size:14px;color:var(--blue-900);font-weight:600;background:#fff;
+  }
+  .datebox .weekday{font-size:12px;color:var(--ink-soft);}
+
+  /* Cards */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;margin-bottom:18px;
+  }
+  .card h2{margin:0 0 2px;font-size:16px;color:var(--blue-900);display:flex;align-items:center;gap:8px;}
+  .card .sub{margin:0 0 14px;font-size:13px;color:var(--ink-soft);}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  thead th{
+    text-align:left;font-size:11.5px;letter-spacing:.03em;color:#ffffff;
+    background:var(--blue-700);border-bottom:1px solid var(--line);padding:10px 10px;font-weight:600;
+  }
+  thead th:first-child{border-top-left-radius:6px;}
+  thead th:last-child{border-top-right-radius:6px;}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  .brandcell{display:flex;align-items:center;gap:10px;font-weight:600;}
+  .chip{
+    width:30px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#fff;flex-shrink:0;
+  }
+  .val-input{
+    width:100%;max-width:160px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;
+    font-size:14px;text-align:right;font-variant-numeric:tabular-nums;
+  }
+  .val-input:focus{outline:2px solid var(--blue-600);outline-offset:1px;border-color:var(--blue-600);}
+  .diff-cell{font-variant-numeric:tabular-nums;font-weight:600;text-align:right;}
+  .diff-zero{color:var(--ink-soft);}
+  .diff-neg,.diff-pos{color:var(--warn-fg);}
+  .status-badge{
+    display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;
+    font-size:12px;font-weight:600;white-space:nowrap;
+  }
+  .status-ok{background:var(--ok-bg);color:var(--ok-fg);}
+  .status-warn{background:var(--warn-bg);color:var(--warn-fg);}
+  .status-pend{background:var(--pend-bg);color:var(--pend-fg);}
+  .totalrow td{font-weight:700;background:#fafbfd;border-top:2px solid var(--line);}
+
+  .obs-wrap{margin-top:16px;}
+  .obs-label{display:block;font-size:12.5px;font-weight:600;color:var(--blue-900);margin-bottom:6px;}
+  .obs-input{
+    width:100%;border:1px solid #f0e2a3;border-radius:8px;padding:10px 12px;background:#fffdf3;
+    font-family:inherit;font-size:14px;color:var(--ink);resize:vertical;min-height:64px;
+  }
+  .obs-input:focus{outline:2px solid var(--blue-600);outline-offset:1px;border-color:var(--blue-600);}
+  .obs-hint{margin:4px 0 0;font-size:11.5px;color:var(--ink-soft);}
+
+  .obs-row td{
+    background:#fff8db;padding:10px 14px 14px 46px;border-bottom:1px solid var(--line);
+  }
+  .obs-title{
+    font-size:11.5px;font-weight:700;color:#8a6d00;margin-bottom:6px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .obs-text{font-size:12.5px;color:var(--ink);white-space:pre-wrap;}
+
+  #printArea .p-obs-row td{background:#fff8db;padding:6px 8px 10px 22px;border-bottom:1px solid var(--line);}
+  #printArea .p-obs-title{font-size:10.5px;font-weight:700;color:#8a6d00;margin-bottom:5px;}
+  #printArea .p-obs-text{font-size:11px;color:var(--ink);white-space:pre-wrap;}
+
+  .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  button{
+    font-family:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:10px 18px;
+    cursor:pointer;border:1px solid transparent;transition:background .15s ease;
+  }
+  .btn-primary{background:var(--blue-700);color:#fff;}
+  .btn-primary:hover{background:var(--blue-900);}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line);}
+  .btn-ghost:hover{background:#f2f4f7;}
+  .btn-small{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+
+  .hist-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+  .hist-table-wrap{overflow-x:auto;}
+  .hist-table td, .hist-table th{white-space:nowrap;}
+  .day-current{background:var(--blue-050);}
+
+  .detail-row td{
+    background:#fff8f7;padding:10px 14px 14px 46px;border-bottom:1px solid var(--line);
+  }
+  .detail-title{
+    font-size:11.5px;font-weight:700;color:var(--warn-fg);margin-bottom:8px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .detail-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .detail-chip{
+    background:#fff;border:1px solid #f3c9c3;border-radius:8px;padding:6px 10px;
+    font-size:12.5px;color:var(--ink);white-space:nowrap;
+  }
+  .detail-chip .dname{font-weight:700;margin-right:4px;}
+  .detail-chip .ddiff{color:var(--warn-fg);font-weight:700;}
+
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .sumcard{
+    border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:2px;
+    border:1px solid var(--line);
+  }
+  .sumcard .n{font-size:24px;font-weight:700;}
+  .sumcard .l{font-size:12.5px;color:var(--ink-soft);}
+  .sc-ok{background:var(--ok-bg);}
+  .sc-ok .n{color:var(--ok-fg);}
+  .sc-warn{background:var(--warn-bg);}
+  .sc-warn .n{color:var(--warn-fg);}
+  .sc-pend{background:var(--pend-bg);}
+  .sc-pend .n{color:var(--pend-fg);}
+  .sc-total{background:var(--blue-050);}
+  .sc-total .n{color:var(--blue-900);}
+
+  .footnote{text-align:center;color:var(--ink-soft);font-size:12.5px;margin-top:16px;}
+
+  /* Login */
+  #loginOverlay{
+    position:fixed;inset:0;background:linear-gradient(160deg,var(--blue-900),var(--blue-700));
+    display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;
+  }
+  .login-box{
+    background:#fff;border-radius:14px;padding:34px 32px;width:100%;max-width:340px;
+    box-shadow:0 20px 50px rgba(15,47,92,.35);text-align:center;
+  }
+  .login-box .login-mark{font-size:38px;margin-bottom:6px;}
+  .login-box h1{margin:0;font-size:19px;color:var(--blue-900);}
+  .login-box p{margin:4px 0 20px;font-size:13px;color:var(--ink-soft);}
+  .login-box input{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;
+    font-size:14px;margin-bottom:10px;font-family:inherit;
+  }
+  .login-box input:focus{outline:2px solid var(--blue-600);outline-offset:1px;border-color:var(--blue-600);}
+  .login-box button{width:100%;margin-top:4px;}
+  .login-error{color:var(--warn-fg);font-size:12.5px;min-height:16px;margin:10px 0 0;}
+  .login-hint{font-size:11.5px;color:var(--ink-soft);margin-top:16px;}
+  .login-hint a{color:var(--blue-600);font-weight:600;text-decoration:none;}
+  .login-hint a:hover{text-decoration:underline;}
+  .app-hidden{display:none !important;}
+
+  .userbar{
+    display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-soft);
+    justify-content:flex-end;margin-bottom:8px;
+  }
+  .userbar b{color:var(--blue-900);}
+  .sync-note{font-size:11px;color:var(--ink-soft);}
+
+  @media (max-width:640px){
+    .summary{grid-template-columns:repeat(2,1fr);}
+    .val-input{max-width:110px;}
+    .topbar{flex-direction:column;align-items:stretch;text-align:center;}
+    .datebox{align-items:center;}
+  }
+
+  /* Área usada apenas para gerar o PDF do histórico (fica oculta na tela normal) */
+  #printArea{display:none;}
+  #printArea h1{font-size:18px;color:var(--blue-900);margin:0 0 14px;}
+  #printArea table{width:100%;border-collapse:collapse;font-size:12px;}
+  #printArea th{background:var(--blue-700);color:#fff;text-align:left;padding:6px 8px;}
+  #printArea td{padding:6px 8px;border-bottom:1px solid var(--line);}
+  #printArea .p-ok{color:var(--ok-fg);font-weight:700;}
+  #printArea .p-warn{color:var(--warn-fg);font-weight:700;}
+  #printArea .p-pend{color:var(--pend-fg);}
+  #printArea .p-detail-row td{background:#fff8f7;padding:6px 8px 10px 22px;border-bottom:1px solid var(--line);}
+  #printArea .p-detail-title{font-size:10.5px;font-weight:700;color:var(--warn-fg);margin-bottom:5px;}
+  #printArea .p-detail-list{display:flex;flex-wrap:wrap;gap:6px;}
+  #printArea .p-detail-chip{
+    background:#fff;border:1px solid #f3c9c3;border-radius:6px;padding:4px 8px;
+    font-size:10.5px;color:var(--ink);white-space:nowrap;
+  }
+  #printArea .p-detail-chip b{color:var(--warn-fg);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-mark">🧺</div>
+    <h1>Lavanderia</h1>
+    <p>Conferência Diária — acesso restrito</p>
+    <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Senha" autocomplete="current-password">
+    <button class="btn-primary" id="btnLogin">Entrar</button>
+    <p class="login-error" id="loginError"></p>
+    <p class="login-hint" id="toggleModeText">Não tem conta? <a href="#" id="toggleModeLink">Criar conta</a></p>
+  </div>
+</div>
+
+<div class="wrap app-hidden" id="appWrap">
+
+  <div class="userbar">
+    <span>Conectado como <b id="userEmailLabel"></b></span>
+    <button class="btn-ghost btn-small" id="btnLogout">Sair</button>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark" id="brandMark">
+        🧺
+        <input type="file" id="logoInput" accept="image/*" title="Trocar imagem da logo">
+        <div class="edit-hint">Trocar<br>imagem</div>
+      </div>
+      <div>
+        <div class="name">Lavanderia</div>
+        <div class="tag">CUIDADO QUE LIMPA</div>
+      </div>
+    </div>
+    <div class="title">
+      <h1>Conferência Diária</h1>
+      <p>Conferência de valores: Sistema x Máquina</p>
+    </div>
+    <div class="datebox">
+      <input type="date" id="dateInput">
+      <div class="weekday" id="weekdayLabel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Lançamento de Valores por Bandeira</h2>
+    <p class="sub">Preencha os valores de cada forma de pagamento para a data selecionada acima.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Bandeira</th>
+          <th>Valor do Sistema (R$)</th>
+          <th>Máquina Loja (R$)</th>
+          <th>Máquina Delivery (R$)</th>
+          <th>Diferença (R$)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="entryBody"></tbody>
+      <tfoot>
+        <tr class="totalrow">
+          <td>Total Geral</td>
+          <td id="totalSistema">0,00</td>
+          <td id="totalMaquinaLoja">0,00</td>
+          <td id="totalMaquinaDelivery">0,00</td>
+          <td id="totalDiff" class="diff-cell">0,00</td>
+          <td id="totalStatus"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="obs-wrap">
+      <label class="obs-label" for="obsInput">Observações do dia</label>
+      <textarea id="obsInput" class="obs-input" rows="3" placeholder="Insira aqui alguma observação sobre a conferência deste dia (ex: motivo de divergência, ocorrência no caixa, etc.)"></textarea>
+      <p class="obs-hint">Se preenchida, a observação aparece no histórico de conferência e no relatório PDF exportado.</p>
+    </div>
+
+    <div class="actions">
+      <button class="btn-ghost" id="btnClear">Limpar</button>
+      <button class="btn-primary" id="btnSave">Salvar Lançamento</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hist-head">
+      <h2 style="margin:0" id="histTitle">Histórico de Conferências</h2>
+      <button class="btn-ghost btn-small" id="btnExportPdf">Exportar Relatório (PDF)</button>
+    </div>
+    <div class="hist-table-wrap">
+      <table class="hist-table">
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Sistema (R$)</th>
+            <th>Máquina Loja (R$)</th>
+            <th>Máquina Delivery (R$)</th>
+            <th>Diferença (R$)</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="sumcard sc-ok"><div class="n" id="cntOk">0</div><div class="l">Dias OK</div></div>
+    <div class="sumcard sc-warn"><div class="n" id="cntWarn">0</div><div class="l">Dias com Divergência</div></div>
+    <div class="sumcard sc-pend"><div class="n" id="cntPend">0</div><div class="l">Dias Pendentes</div></div>
+    <div class="sumcard sc-total"><div class="n" id="cntTotal">0</div><div class="l">Total de Dias no Mês</div></div>
+  </div>
+
+  <p class="footnote">Conferência realizada diariamente para garantir a precisão dos valores. Os dados ficam salvos na nuvem e sincronizados entre todos os computadores. <span id="syncNote" class="sync-note"></span></p>
+</div>
+
+<div id="printArea"></div>
+
+</div><!-- fim #appWrap -->
+
+<!-- ===================== FIREBASE ===================== -->
+<!-- Login (Authentication) e banco de dados (Firestore) na nuvem, para os
+     dados aparecerem iguais em qualquer computador que acessar este arquivo. -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  // >>> COLE AQUI os dados do SEU projeto Firebase (veja instruções enviadas junto com o arquivo) <<<
+  const firebaseConfig = {
+    apiKey: "AIzaSyDPVWAr50nCCAxrem1ywSfh_yvpvZT7A4g",
+    authDomain: "lavanderia-conferencia.firebaseapp.com",
+    projectId: "lavanderia-conferencia",
+    storageBucket: "lavanderia-conferencia.firebasestorage.app",
+    messagingSenderId: "544744736156",
+    appId: "1:544744736156:web:16c4426bccd9dab8e7b459"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+
+<script>
+(function(){
+  const BRANDS = [
+    {key:'amex', label:'Amex', color:'#2E77BB'},
+    {key:'elocredito', label:'Elo Crédito', color:'#B8272C'},
+    {key:'elodebito', label:'Elo Débito', color:'#F2A900'},
+    {key:'visacredito', label:'Visa Crédito', color:'#1A1F71'},
+    {key:'visadebito', label:'Visa Débito', color:'#1A1F71'},
+    {key:'masterdebito', label:'Master Débito', color:'#EB6020'},
+    {key:'mastercredito', label:'Master Crédito', color:'#EB001B'},
+    {key:'dinheiro', label:'Dinheiro', color:'#2E9E4F'},
+    {key:'pix', label:'Pix', color:'#2FA88E'},
+  ];
+  const WEEKDAYS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const EPS = 0.005;
+
+  // Cache local do mês exibido, alimentado a partir do Firestore (nuvem):
+  // { 'YYYY-MM-DD': { amex:{sistema,maquinaLoja,maquinaDelivery}, ..., obs:'' } }
+  const entries = {};
+  const COLLECTION = 'conferencias';
+
+  const dateInput = document.getElementById('dateInput');
+  const entryBody = document.getElementById('entryBody');
+  const historyBody = document.getElementById('historyBody');
+  const weekdayLabel = document.getElementById('weekdayLabel');
+  const histTitle = document.getElementById('histTitle');
+  const obsInput = document.getElementById('obsInput');
+
+  function todayKey(){
+    const d = new Date();
+    return toKey(d);
+  }
+  function toKey(d){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function keyToDate(key){
+    const [y,m,d] = key.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+  function fmt(n){
+    return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function parseVal(str){
+    if(!str) return 0;
+    const cleaned = str.replace(/\./g,'').replace(',', '.').replace(/[^\d.-]/g,'');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function buildEntryRows(){
+    entryBody.innerHTML = '';
+    BRANDS.forEach(b=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="brandcell">
+            ${b.label}
+          </div>
+        </td>
+        <td><input class="val-input" data-brand="${b.key}" data-field="sistema" inputmode="decimal" placeholder="0,00"></td>
+        <td><input class="val-input" data-brand="${b.key}" data-field="maquinaLoja" inputmode="decimal" placeholder="0,00"></td>
+        <td><input class="val-input" data-brand="${b.key}" data-field="maquinaDelivery" inputmode="decimal" placeholder="0,00"></td>
+        <td class="diff-cell" id="diff-${b.key}">0,00</td>
+        <td id="status-${b.key}"><span class="status-badge status-pend">—</span></td>
+      `;
+      entryBody.appendChild(tr);
+    });
+    entryBody.querySelectorAll('.val-input').forEach(inp=>{
+      inp.addEventListener('input', recalcForm);
+      inp.addEventListener('blur', (e)=>{
+        const v = parseVal(e.target.value);
+        e.target.value = v === 0 && e.target.value.trim()==='' ? '' : fmt(v);
+        recalcForm();
+      });
+    });
+  }
+
+  function statusBadge(diff, hasAny){
+    if(!hasAny){
+      return '<span class="status-badge status-pend">— </span>';
+    }
+    if(Math.abs(diff) < EPS){
+      return '<span class="status-badge status-ok">✓ OK</span>';
+    }
+    return '<span class="status-badge status-warn">⚠ DIVERGÊNCIA</span>';
+  }
+
+  function recalcForm(){
+    let totS=0, totML=0, totMD=0, anyEntered=false;
+    BRANDS.forEach(b=>{
+      const sInp = entryBody.querySelector(`[data-brand="${b.key}"][data-field="sistema"]`);
+      const mlInp = entryBody.querySelector(`[data-brand="${b.key}"][data-field="maquinaLoja"]`);
+      const mdInp = entryBody.querySelector(`[data-brand="${b.key}"][data-field="maquinaDelivery"]`);
+      const s = parseVal(sInp.value);
+      const ml = parseVal(mlInp.value);
+      const md = parseVal(mdInp.value);
+      const m = ml + md;
+      if(sInp.value.trim()!=='' || mlInp.value.trim()!=='' || mdInp.value.trim()!=='') anyEntered = true;
+      const diff = s - m;
+      totS += s; totML += ml; totMD += md;
+      const diffCell = document.getElementById(`diff-${b.key}`);
+      diffCell.textContent = fmt(diff);
+      diffCell.className = 'diff-cell ' + (Math.abs(diff) < EPS ? 'diff-zero' : (diff<0?'diff-neg':'diff-pos'));
+      document.getElementById(`status-${b.key}`).innerHTML = statusBadge(diff, sInp.value.trim()!=='' || mlInp.value.trim()!=='' || mdInp.value.trim()!=='');
+    });
+    document.getElementById('totalSistema').textContent = fmt(totS);
+    document.getElementById('totalMaquinaLoja').textContent = fmt(totML);
+    document.getElementById('totalMaquinaDelivery').textContent = fmt(totMD);
+    const totDiff = totS - (totML + totMD);
+    const totDiffEl = document.getElementById('totalDiff');
+    totDiffEl.textContent = fmt(totDiff);
+    totDiffEl.className = 'diff-cell ' + (Math.abs(totDiff) < EPS ? 'diff-zero' : (totDiff<0?'diff-neg':'diff-pos'));
+    document.getElementById('totalStatus').innerHTML = statusBadge(totDiff, anyEntered);
+  }
+
+  function loadFormFromEntry(key){
+    const data = entries[key];
+    entryBody.querySelectorAll('.val-input').forEach(inp=>{
+      const b = inp.dataset.brand, f = inp.dataset.field;
+      if(data && data[b] && typeof data[b][f] === 'number'){
+        inp.value = fmt(data[b][f]);
+      } else {
+        inp.value = '';
+      }
+    });
+    obsInput.value = (data && data.obs) ? data.obs : '';
+    recalcForm();
+  }
+
+  // Retorna a observação salva para o dia (string vazia se não houver)
+  function getDayObs(key){
+    const data = entries[key];
+    return (data && data.obs) ? data.obs.trim() : '';
+  }
+
+  function computeDayTotals(key){
+    const data = entries[key];
+    if(!data) return null;
+    let s=0,ml=0,md=0;
+    BRANDS.forEach(b=>{
+      s += (data[b.key]?.sistema)||0;
+      ml += (data[b.key]?.maquinaLoja)||0;
+      md += (data[b.key]?.maquinaDelivery)||0;
+    });
+    const m = ml + md;
+    return {sistema:s, maquinaLoja:ml, maquinaDelivery:md, maquina:m, diff:s-m};
+  }
+
+  // Lista as bandeiras cujo valor do Sistema não bate com o total da Máquina (Loja+Delivery) naquele dia
+  function computeDayDivergentBrands(key){
+    const data = entries[key];
+    if(!data) return [];
+    const list = [];
+    BRANDS.forEach(b=>{
+      const s = (data[b.key]?.sistema)||0;
+      const ml = (data[b.key]?.maquinaLoja)||0;
+      const md = (data[b.key]?.maquinaDelivery)||0;
+      const m = ml + md;
+      const diff = s - m;
+      if(Math.abs(diff) >= EPS){
+        list.push({ label:b.label, sistema:s, maquinaLoja:ml, maquinaDelivery:md, maquina:m, diff });
+      }
+    });
+    return list;
+  }
+
+  async function fetchMonthEntries(year, month){
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const startKey = toKey(new Date(year, month, 1));
+    const endKey = toKey(new Date(year, month, daysInMonth));
+    const syncNote = document.getElementById('syncNote');
+    if(syncNote) syncNote.textContent = 'Sincronizando…';
+    try{
+      const snap = await db.collection(COLLECTION)
+        .where(firebase.firestore.FieldPath.documentId(), '>=', startKey)
+        .where(firebase.firestore.FieldPath.documentId(), '<=', endKey)
+        .get();
+      Object.keys(entries).forEach(k=>{ if(k >= startKey && k <= endKey) delete entries[k]; });
+      snap.forEach(doc=>{ entries[doc.id] = doc.data(); });
+      if(syncNote) syncNote.textContent = '';
+    }catch(err){
+      console.error('Erro ao buscar dados do mês:', err);
+      if(syncNote) syncNote.textContent = 'Falha ao sincronizar — verifique sua internet.';
+    }
+  }
+
+  async function saveCurrentEntry(){
+    const key = dateInput.value;
+    if(!key) return;
+    const data = {};
+    entryBody.querySelectorAll('.val-input').forEach(inp=>{
+      const b = inp.dataset.brand, f = inp.dataset.field;
+      if(!data[b]) data[b] = {sistema:0, maquinaLoja:0, maquinaDelivery:0};
+      data[b][f] = parseVal(inp.value);
+    });
+    data.obs = obsInput.value.trim();
+    data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+    data.updatedBy = (auth.currentUser && auth.currentUser.email) || null;
+
+    const btn = document.getElementById('btnSave');
+    const originalLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try{
+      await db.collection(COLLECTION).doc(key).set(data);
+      entries[key] = data;
+      renderHistory(key);
+    }catch(err){
+      console.error('Erro ao salvar:', err);
+      alert('Não foi possível salvar. Verifique sua conexão com a internet e tente novamente.');
+    }finally{
+      btn.disabled = false; btn.textContent = originalLabel;
+    }
+  }
+
+  async function clearForm(){
+    entryBody.querySelectorAll('.val-input').forEach(inp=> inp.value = '');
+    obsInput.value = '';
+    recalcForm();
+    const key = dateInput.value;
+    if(key){
+      delete entries[key];
+      renderHistory(key);
+      try{
+        await db.collection(COLLECTION).doc(key).delete();
+      }catch(err){
+        console.error('Erro ao limpar lançamento na nuvem:', err);
+      }
+    }
+  }
+
+  // Fonte única da verdade para o status de um dia — usada na tela, no CSV e no PDF,
+  // assim o status NUNCA fica divergente entre eles.
+  function getDayStatus(totals){
+    if(!totals) return {code:'pend', label:'PENDENTE'};
+    if(Math.abs(totals.diff) < EPS) return {code:'ok', label:'OK'};
+    return {code:'warn', label:'DIVERGÊNCIA'};
+  }
+
+  // Monta os dados de todos os dias do mês uma única vez (reaproveitado por tela/CSV/PDF)
+  function getMonthRows(year, month){
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const rows = [];
+    for(let d=1; d<=daysInMonth; d++){
+      const dt = new Date(year, month, d);
+      const key = toKey(dt);
+      const totals = computeDayTotals(key);
+      const status = getDayStatus(totals);
+      rows.push({
+        day: String(d).padStart(2,'0'),
+        key,
+        totals,
+        status
+      });
+    }
+    return rows;
+  }
+
+  function renderHistory(selectedKey){
+    const selDate = keyToDate(selectedKey);
+    const year = selDate.getFullYear();
+    const month = selDate.getMonth();
+    histTitle.textContent = `Histórico de Conferências - ${MONTHS[month]}/${year}`;
+
+    const rows = getMonthRows(year, month);
+    historyBody.innerHTML = '';
+    let ok=0, warn=0, pend=0;
+
+    rows.forEach(row=>{
+      const { totals, status, key, day } = row;
+      const tr = document.createElement('tr');
+      if(key === selectedKey) tr.classList.add('day-current');
+
+      let sistemaTxt='-', maquinaLojaTxt='-', maquinaDeliveryTxt='-', diffTxt='-', statusHtml, actionHtml;
+
+      if(totals){
+        sistemaTxt = fmt(totals.sistema);
+        maquinaLojaTxt = fmt(totals.maquinaLoja);
+        maquinaDeliveryTxt = fmt(totals.maquinaDelivery);
+        diffTxt = fmt(totals.diff);
+        if(status.code === 'ok'){
+          statusHtml = '<span class="status-badge status-ok">✓ OK</span>';
+          ok++;
+        } else {
+          statusHtml = '<span class="status-badge status-warn">⚠ DIVERGÊNCIA</span>';
+          warn++;
+        }
+        actionHtml = `<button class="btn-ghost btn-small" data-goto="${key}">Ver Detalhes →</button>`;
+      } else {
+        statusHtml = '<span class="status-badge status-pend">🕐 PENDENTE</span>';
+        pend++;
+        actionHtml = `<button class="btn-ghost btn-small" data-goto="${key}">Lançar →</button>`;
+      }
+
+      tr.innerHTML = `
+        <td>${day}</td>
+        <td>${sistemaTxt}</td>
+        <td>${maquinaLojaTxt}</td>
+        <td>${maquinaDeliveryTxt}</td>
+        <td>${diffTxt}</td>
+        <td>${statusHtml}</td>
+        <td>${actionHtml}</td>
+      `;
+      historyBody.appendChild(tr);
+
+      if(status.code === 'warn'){
+        const divergentes = computeDayDivergentBrands(key);
+        const chips = divergentes.map(item => {
+          const diffFmt = fmt(Math.abs(item.diff));
+          const sinal = item.diff > 0 ? 'a mais no sistema' : 'a mais na máquina';
+          return `<div class="detail-chip">
+            <span class="dname">${item.label}:</span>
+            Sistema ${fmt(item.sistema)} · Máquina Loja ${fmt(item.maquinaLoja)} · Máquina Delivery ${fmt(item.maquinaDelivery)}
+            (<span class="ddiff">dif. R$ ${diffFmt}</span> ${sinal})
+          </div>`;
+        }).join('');
+
+        const detailTr = document.createElement('tr');
+        detailTr.classList.add('detail-row');
+        detailTr.innerHTML = `
+          <td colspan="7">
+            <div class="detail-title">⚠ Divergência detalhada por bandeira</div>
+            <div class="detail-list">${chips}</div>
+          </td>
+        `;
+        historyBody.appendChild(detailTr);
+      }
+
+      const obsTexto = getDayObs(key);
+      if(obsTexto){
+        const obsTr = document.createElement('tr');
+        obsTr.classList.add('obs-row');
+        obsTr.innerHTML = `
+          <td colspan="7">
+            <div class="obs-title">📝 Observação</div>
+            <div class="obs-text"></div>
+          </td>
+        `;
+        obsTr.querySelector('.obs-text').textContent = obsTexto;
+        historyBody.appendChild(obsTr);
+      }
+    });
+
+    document.getElementById('cntOk').textContent = ok;
+    document.getElementById('cntWarn').textContent = warn;
+    document.getElementById('cntPend').textContent = pend;
+    document.getElementById('cntTotal').textContent = rows.length;
+
+    historyBody.querySelectorAll('[data-goto]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        goToDate(btn.dataset.goto);
+      });
+    });
+  }
+
+  function goToDate(key){
+    dateInput.value = key;
+    onDateChange();
+  }
+
+  function updateWeekdayLabel(){
+    const key = dateInput.value;
+    if(!key) return;
+    const dt = keyToDate(key);
+    weekdayLabel.textContent = WEEKDAYS[dt.getDay()];
+  }
+
+  async function onDateChange(){
+    const key = dateInput.value;
+    if(!key) return;
+    updateWeekdayLabel();
+    const dt = keyToDate(key);
+    await fetchMonthEntries(dt.getFullYear(), dt.getMonth());
+    loadFormFromEntry(key);
+    renderHistory(key);
+  }
+
+  function setupLogoUpload(){
+    const mark = document.getElementById('brandMark');
+    const input = document.getElementById('logoInput');
+    input.addEventListener('change', (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        mark.style.backgroundImage = `url(${ev.target.result})`;
+        mark.childNodes.forEach(node=>{
+          if(node.nodeType === Node.TEXT_NODE) node.textContent = '';
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Gera o PDF usando a função nativa de impressão do navegador (sem depender de
+  // bibliotecas externas, que podem ser bloqueadas). Monta uma versão só do
+  // histórico usando os MESMOS status calculados acima (getDayStatus/getMonthRows)
+  // e abre a janela de impressão, onde o usuário escolhe "Salvar como PDF".
+  function exportHistoryPDF(){
+    const selDate = keyToDate(dateInput.value);
+    const year = selDate.getFullYear();
+    const month = selDate.getMonth();
+    const monthRows = getMonthRows(year, month);
+
+    const cls = {ok:'p-ok', warn:'p-warn', pend:'p-pend'};
+
+    let rowsHtml = '';
+    monthRows.forEach(row=>{
+      const { totals, status, day, key } = row;
+      const sistemaTxt = totals ? fmt(totals.sistema) : '-';
+      const maquinaLojaTxt = totals ? fmt(totals.maquinaLoja) : '-';
+      const maquinaDeliveryTxt = totals ? fmt(totals.maquinaDelivery) : '-';
+      const diffTxt = totals ? fmt(totals.diff) : '-';
+      rowsHtml += `
+        <tr>
+          <td>${day}</td>
+          <td>${sistemaTxt}</td>
+          <td>${maquinaLojaTxt}</td>
+          <td>${maquinaDeliveryTxt}</td>
+          <td>${diffTxt}</td>
+          <td class="${cls[status.code]}">${status.label}</td>
+        </tr>`;
+
+      if(status.code === 'warn'){
+        const divergentes = computeDayDivergentBrands(key);
+        const chips = divergentes.map(item => {
+          const diffFmt = fmt(Math.abs(item.diff));
+          const sinal = item.diff > 0 ? 'a mais no sistema' : 'a mais na máquina';
+          return `<div class="p-detail-chip">
+            <b>${item.label}:</b> Sistema ${fmt(item.sistema)} · Máquina Loja ${fmt(item.maquinaLoja)} · Máquina Delivery ${fmt(item.maquinaDelivery)}
+            (dif. R$ ${diffFmt} ${sinal})
+          </div>`;
+        }).join('');
+
+        rowsHtml += `
+          <tr class="p-detail-row">
+            <td colspan="6">
+              <div class="p-detail-title">⚠ Divergência detalhada por bandeira</div>
+              <div class="p-detail-list">${chips}</div>
+            </td>
+          </tr>`;
+      }
+
+      const obsTexto = getDayObs(key);
+      if(obsTexto){
+        rowsHtml += `
+          <tr class="p-obs-row">
+            <td colspan="6">
+              <div class="p-obs-title">📝 Observação</div>
+              <div class="p-obs-text">${escapeHtml(obsTexto)}</div>
+            </td>
+          </tr>`;
+      }
+    });
+
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+      <h1>Histórico de Conferências - ${MONTHS[month]}/${year}</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Sistema (R$)</th>
+            <th>Máquina Loja (R$)</th>
+            <th>Máquina Delivery (R$)</th>
+            <th>Diferença (R$)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+
+    window.print();
+  }
+
+  // Limpa a área de impressão depois que a janela de impressão fecha
+  window.addEventListener('afterprint', ()=>{
+    const printArea = document.getElementById('printArea');
+    if(printArea) printArea.innerHTML = '';
+  });
+
+  // ------------------- Login -------------------
+  const loginOverlay = document.getElementById('loginOverlay');
+  const appWrap = document.getElementById('appWrap');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginError = document.getElementById('loginError');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+
+  const toggleModeText = document.getElementById('toggleModeText');
+  let authMode = 'login'; // 'login' | 'signup'
+
+  function renderModeUI(){
+    if(authMode === 'login'){
+      btnLogin.textContent = 'Entrar';
+      toggleModeText.innerHTML = 'Não tem conta? <a href="#" id="toggleModeLink">Criar conta</a>';
+    } else {
+      btnLogin.textContent = 'Criar conta';
+      toggleModeText.innerHTML = 'Já tem conta? <a href="#" id="toggleModeLink">Entrar</a>';
+    }
+    document.getElementById('toggleModeLink').addEventListener('click', (e)=>{
+      e.preventDefault();
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      loginError.textContent = '';
+      renderModeUI();
+    });
+  }
+  renderModeUI();
+
+  function setLoginLoading(loading){
+    btnLogin.disabled = loading;
+    btnLogin.textContent = loading
+      ? (authMode === 'login' ? 'Entrando…' : 'Criando…')
+      : (authMode === 'login' ? 'Entrar' : 'Criar conta');
+  }
+
+  function traduzErroLogin(code){
+    const map = {
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/user-not-found': 'Usuário não cadastrado.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente novamente.',
+      'auth/network-request-failed': 'Sem conexão com a internet.',
+      'auth/email-already-in-use': 'Este e-mail já está cadastrado. Tente entrar.',
+      'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.',
+    };
+    return map[code] || 'Não foi possível continuar. Tente novamente.';
+  }
+
+  async function doAuth(){
+    loginError.textContent = '';
+    const email = loginEmail.value.trim();
+    const pass = loginPassword.value;
+    if(!email || !pass){
+      loginError.textContent = 'Informe e-mail e senha.';
+      return;
+    }
+    setLoginLoading(true);
+    try{
+      if(authMode === 'login'){
+        await auth.signInWithEmailAndPassword(email, pass);
+      } else {
+        await auth.createUserWithEmailAndPassword(email, pass);
+      }
+      loginPassword.value = '';
+    }catch(err){
+      loginError.textContent = traduzErroLogin(err.code);
+    }finally{
+      setLoginLoading(false);
+    }
+  }
+
+  btnLogin.addEventListener('click', doAuth);
+  loginPassword.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') doAuth(); });
+  loginEmail.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loginPassword.focus(); });
+  btnLogout.addEventListener('click', ()=> auth.signOut());
+
+  let appInitialized = false;
+  function initAppOnce(){
+    if(appInitialized) return;
+    appInitialized = true;
+    buildEntryRows();
+    setupLogoUpload();
+    dateInput.value = todayKey();
+    dateInput.addEventListener('change', onDateChange);
+    document.getElementById('btnSave').addEventListener('click', saveCurrentEntry);
+    document.getElementById('btnClear').addEventListener('click', clearForm);
+    document.getElementById('btnExportPdf').addEventListener('click', exportHistoryPDF);
+    onDateChange();
+  }
+
+  auth.onAuthStateChanged((user)=>{
+    if(user){
+      loginOverlay.classList.add('app-hidden');
+      appWrap.classList.remove('app-hidden');
+      document.getElementById('userEmailLabel').textContent = user.email;
+      initAppOnce();
+    } else {
+      appWrap.classList.add('app-hidden');
+      loginOverlay.classList.remove('app-hidden');
+    }
+  });
+
+  // Registra o service worker (necessário para o navegador oferecer
+  // "Instalar app" — só funciona quando o arquivo é acessado via https://).
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{
+        // Falha silenciosa: por exemplo quando o arquivo é aberto direto
+        // do computador (file://), sem estar hospedado num servidor.
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
